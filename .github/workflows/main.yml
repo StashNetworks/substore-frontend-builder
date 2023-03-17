@@ -1,0 +1,43 @@
+name: build
+on: 
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 * * * *"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: 'sub-store-org/Sub-Store-Front-End'
+          ref: 'master'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "14"
+      - name: Install dependencies
+        run: |
+          npm install -g pnpm
+          pnpm i
+      - name: Build
+        run: |
+          pnpm build
+      - name: Zip Release
+        run: |
+          cd dist/
+          zip -r SubStore.zip .
+          mv SubStore.zip ../
+      - name: Get Current Date
+        run: |
+          echo "date=$(date +"%Y-%m-%d")" >> $GITHUB_ENV
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.date }}
+          files: |
+            ./SubStore.zip
